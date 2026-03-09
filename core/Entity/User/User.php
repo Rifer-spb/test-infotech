@@ -62,7 +62,7 @@ class User extends AbstractEntity implements \yii\web\IdentityInterface
         return $user;
     }
 
-    public static function findIdentity($id): static
+    public static function findIdentity($id): ?static
     {
         return static::findOne(['id' => $id]);
     }

@@ -8,13 +8,14 @@ use Core\Form\Auth\SignInForm;
 use Core\Form\Auth\SignUpForm;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
-use yii\web\Controller;
+use Core\UseCase\Auth\SignUpUseCase;
 
-class AuthController extends Controller
+class AuthController extends AbstractController
 {
     public function __construct(
         $id,
         $module,
+        private SignUpUseCase $signUpUseCase,
         $config = []
     ) {
         parent::__construct($id, $module, $config);
@@ -51,17 +52,11 @@ class AuthController extends Controller
 
         $form = new SignInForm();
         if ($form->load(Yii::$app->request->post()) && $form->validate()) {
-            try {
+            return $this->try(function () use ($form) {
                 $user = User::getByUsername($form->username);
                 $this->createSession($user, $form->rememberMe);
                 return $this->goBack();
-            } catch (\DomainException $e) {
-                Yii::$app->errorHandler->logException($e);
-                Yii::$app->session->setFlash('error', $e->getMessage());
-            } catch (\Exception $e) {
-                Yii::$app->errorHandler->logException($e);
-                Yii::$app->session->setFlash('error', Yii::t('app', 'Внутренняя ошибка сервера!'));
-            }
+            });
         }
 
         return $this->render('sign-in', [
@@ -77,17 +72,11 @@ class AuthController extends Controller
 
         $form = new SignUpForm();
         if ($form->load(Yii::$app->request->post()) && $form->validate()) {
-            try {
-                $user = User::create($form->username, $form->password);
+            return $this->try(function () use ($form) {
+                $user = $this->signUpUseCase->execute($form);
                 $this->createSession($user);
                 return $this->goHome();
-            } catch (\DomainException $e) {
-                Yii::$app->errorHandler->logException($e);
-                Yii::$app->session->setFlash('error', $e->getMessage());
-            } catch (\Exception $e) {
-                Yii::$app->errorHandler->logException($e);
-                Yii::$app->session->setFlash('error', Yii::t('app', 'Внутренняя ошибка сервера!'));
-            }
+            });
         }
 
         return $this->render('sign-up', [

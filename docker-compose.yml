@@ -1,0 +1,50 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - php-fpm
+    networks:
+      - default
+
+  php-fpm:
+    build:
+      context: ./
+      dockerfile: docker/php-fpm.docker  # создадим этот файл
+    volumes:
+      - ./:/var/www
+      - ./web/uploads:/var/www/web/uploads
+    depends_on:
+      - mariadb
+    command: >
+      sh -c "
+        mkdir -p /var/www/web/uploads/books &&
+        chmod 777 /var/www/web/uploads/books &&
+        php-fpm
+      "
+
+  php-cli:
+    build:
+      context: ./
+      dockerfile: docker/php-cli.docker
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - mariadb
+    tty: true
+
+  mariadb:
+    image: mariadb:10.1
+    environment:
+      - "MYSQL_ROOT_PASSWORD=password"
+      - "MYSQL_USER=user"
+      - "MYSQL_PASSWORD=password"
+      - "MYSQL_DATABASE=info_tech"
+    volumes:
+      - ./storage/docker/mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"

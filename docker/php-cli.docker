@@ -1,0 +1,29 @@
+# docker/php-cli.docker
+FROM php:8.2-cli
+
+ENV COMPOSER_ALLOW_SUPERUSER 1
+
+# Установка системных зависимостей (включая git!)
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libzip-dev \
+    libicu-dev \
+    libonig-dev \
+    libpq-dev \
+    unzip \
+    mariadb-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка PHP расширений для Yii2
+RUN docker-php-ext-install \
+    pdo_mysql \
+    mysqli \
+    zip \
+    intl \
+    mbstring
+
+# Установка Composer (ваш способ рабочий, оставим его)
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/bin --filename=composer --quiet
+
+WORKDIR /var/www

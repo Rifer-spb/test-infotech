@@ -25,6 +25,7 @@ services:
         mkdir -p /var/www/web/uploads/books &&
         chmod 777 /var/www/web/uploads/books &&
         chmod 777 /var/www/web/assets &&
+        chmod 777 /var/www/runtime &&
         php-fpm
       "
 

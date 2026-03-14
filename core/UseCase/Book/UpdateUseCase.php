@@ -20,18 +20,28 @@ class UpdateUseCase
     public function execute(int $id, BookForm $form): void
     {
         $book = Book::getById($id);
-        $book->edit(
-            $form->authors,
-            $form->title,
-            $form->description,
-            $form->year,
-            $form->isbn
-        );
 
-        if ($form->imageFile) {
-            $book->uploadPhoto($form->imageFile);
-        }
+        $this->transaction
+            ->onProcess(function () use ($book, $form) {
+                $book->edit(
+                    $form->authors,
+                    $form->title,
+                    $form->description,
+                    $form->year,
+                    $form->isbn
+                );
 
-        $this->transaction->onProcess(fn() => $book->saveOrFail())->run();
+                if ($form->imageFile) {
+                    $book->uploadPhoto($form->imageFile);
+                }
+
+                $book->saveOrFail();
+            })
+            ->onError(function () use ($book) {
+                if (file_exists($book->getPublicPhotoPath())) {
+                    unlink($book->getPublicPhotoPath());
+                }
+            })
+            ->run();
     }
 }
